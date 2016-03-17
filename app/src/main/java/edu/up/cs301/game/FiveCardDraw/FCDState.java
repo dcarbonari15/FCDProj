@@ -2,6 +2,7 @@ package edu.up.cs301.game.FiveCardDraw;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Random;
 
 import edu.up.cs301.card.Card;
 import edu.up.cs301.card.Rank;
@@ -29,6 +30,7 @@ public class FCDState extends GameState {
     private int player2Bet;
     private int gameStage;
     private int targetPlayer;
+    private int numPlayers;
 
     private Rank[] cardVals= {Rank.ACE, Rank.TWO, Rank.THREE, Rank.FOUR, Rank.FIVE, Rank.SIX, Rank.SEVEN,
                                 Rank.EIGHT, Rank.NINE, Rank.TEN, Rank.JACK, Rank.QUEEN, Rank.KING};
@@ -44,6 +46,7 @@ public class FCDState extends GameState {
     public FCDState(){
         player1Money = 500;
         player2Money = 500;
+        numPlayers = 2;
         int cardCount = 0;
         for(int i = 0; i < 4; i++){
             for(int j = 0; j < 13; j++){
@@ -310,9 +313,16 @@ public class FCDState extends GameState {
             }
             return highestCard;
         }else if(handVal == 1){
-
+            Rank[] ranks = new Rank[5];
+            for(int i = 0; i < 5; i++){
+                ranks[i] = cards[i].getRank();
+            }
+            return pairVal(ranks);
         }else if(handVal == 2){
-
+            Rank[] ranks = new Rank[5];
+            for(int i = 0; i < 5; i++){
+                ranks[i] = cards[i].getRank();
+            }
         }else if(handVal == 3){
 
         }else if(handVal == 4){
@@ -343,6 +353,315 @@ public class FCDState extends GameState {
             return sorted[0];
         }
         return 0;
+    }
+
+    private int pairVal(Rank[] ranks){
+        for(int i = 1; i < 5; i++){
+            //the cards that match with the first card in the hand
+            if (ranks[0].equals(ranks[i])) {
+                return ranksToInts(ranks[0]);
+            }
+            //the cards that match with the second card in the hand
+            if(i > 1){
+                if(ranks[1].equals(ranks[i])){
+                    return ranksToInts(ranks[1]);
+                }
+            }
+            //the cards that match with the third card in the hand
+            if(i > 2){
+                if(ranks[2].equals(ranks[i])){
+                    return ranksToInts(ranks[2]);
+                }
+            }
+            //the cards that match with the fourth card in the hand
+            if(i > 3){
+                if(ranks[3].equals(ranks[i])){
+                    return ranksToInts(ranks[3]);
+                }
+            }
+        }
+        return -1;
+    }
+
+    private int twoPairVal(Rank[] ranks){
+        int pair1val = -1;
+        int pair2val;
+        for(int i = 1; i < 5; i++){
+            //the cards that match with the first card in the hand
+            if (ranks[0].equals(ranks[i])) {
+                if(pair1val == -1){
+                    pair1val =
+                }
+            }
+            //the cards that match with the second card in the hand
+            if(i > 1){
+                if(ranks[1].equals(ranks[i])){
+                    return ranksToInts(ranks[1]);
+                }
+            }
+            //the cards that match with the third card in the hand
+            if(i > 2){
+                if(ranks[2].equals(ranks[i])){
+                    return ranksToInts(ranks[2]);
+                }
+            }
+            //the cards that match with the fourth card in the hand
+            if(i > 3){
+                if(ranks[3].equals(ranks[i])){
+                    return ranksToInts(ranks[3]);
+                }
+            }
+        }
+    }
+
+    /**
+     * modifies the pot value via sum
+     *
+     * @param mod
+     *      the amount to add (if +) or subtract (if -)
+     */
+    public void modifyPot(int mod){
+        this.pot += mod;
+    }
+
+    /**
+     * modifies the players money
+     *
+     * @param targetPlayer
+     *      the player to be modified
+     * @param mod
+     *      the amount to modify it by
+     */
+    public void modifyPlayerMoney(int targetPlayer, int mod){
+        if (targetPlayer == 1){
+            if (this.player1Money + mod >= 0){
+                this.player1Money += mod;
+            }
+        }
+        else if (targetPlayer == 2){
+            if (this.player2Money + mod >= 0){
+                this.player2Money += mod;
+            }
+        }
+    }
+
+    /**
+     * modify the given player's bet
+     *
+     * @param targetPlayer
+     *      player's bet to be modified
+     * @param mod
+     *      amount to modify the bet
+     */
+    public void modifyPlayerBet(int targetPlayer, int mod){
+        if (targetPlayer == 1){
+            this.player1Bet += mod;
+        }
+        else if (targetPlayer == 2){
+            this.player2Bet += mod;
+        }
+    }
+
+    /**
+     * handles a player's victory
+     *
+     * @param sourcePlayer
+     *      the player that won
+     */
+    public void playerWins(int sourcePlayer){
+        if (sourcePlayer == 1){
+            this.player1Money += this.pot;
+        }
+        else if (sourcePlayer == 2){
+            this.player2Money += this.pot;
+        }
+    }
+
+    /**
+     * handles a player folding
+     *
+     * @param sourcePlayer
+     *      the player that is folding
+     */
+    public void playerFolds(int sourcePlayer){
+        if (sourcePlayer == activePlayer) {
+            if (sourcePlayer == 1) {
+            }
+            else if (sourcePlayer == 2) {
+            }
+        }
+    }
+
+    /**
+     * handles a player calling
+     *
+     * @param sourcePlayer
+     *      the player that is calling
+     * @param base
+     *      the call amount
+     */
+    public void playerCalls(int sourcePlayer, int base){
+        if (sourcePlayer == activePlayer) {
+            if (sourcePlayer == 1) {
+                this.player1Bet += base;
+                this.player1Money -= this.player1Bet;
+                this.pot += player1Bet;
+            } else if (sourcePlayer == 2) {
+                this.player2Bet += base;
+                this.player2Money -= this.player2Bet;
+                this.pot += player2Bet;
+            }
+        }
+    }
+
+    /**
+     * handles a player raising
+     *
+     * @param sourcePlayer
+     *      the player doing the raising
+     * @param base
+     *      the call amount
+     * @param amount
+     *      the amount the player is raising the call by
+     */
+    public void playerRaises(int sourcePlayer, int base, int amount){
+        if (sourcePlayer == activePlayer) {
+            if (sourcePlayer == 1) {
+                this.player1Bet += base + amount;
+                this.player1Money -= this.player1Bet;
+                this.pot += player1Bet;
+            } else if (sourcePlayer == 2) {
+                this.player2Bet += base + amount;
+                this.player2Money -= this.player2Bet;
+                this.pot += player2Bet;
+            }
+        }
+    }
+
+    /**
+     * handles a player discarding 1 or multiple cards
+     *
+     * @param sourcePlayer
+     *      the player doing the discarding
+     * @param card
+     *      the array of cards being discarded
+     */
+    public void playerDiscards(int sourcePlayer, Card[] card){
+        if (sourcePlayer == 1){
+            //for each card in discard array
+            for (int i = 0; i < card.length; i++){
+                //for each card in player's hand
+                for (int j = 0; j < player1Hand.length; j++){
+                    //check if the two cards match
+                    if(card[i].getRank() == player1Hand[j].getRank()
+                            && card[i].getSuit() == player1Hand[j].getSuit()){
+
+                        //set the discarded card to the top card on the deck
+                        player1Hand[j] = deck.get(0);
+                        //remove top card
+                        deck.remove(0);
+                    }
+                }
+            }
+        }
+        else if (sourcePlayer == 2){
+            //for each card in discard array
+            for (int i = 0; i < card.length; i++){
+                //for each card in player's hand
+                for (int j = 0; j < player2Hand.length; j++){
+                    //check if the two cards match
+                    if(card[i].getRank() == player2Hand[j].getRank()
+                            && card[i].getSuit() == player2Hand[j].getSuit()){
+
+                        //set the discarded card to the top card on the deck
+                        player2Hand[j] = deck.get(0);
+                        //remove top card
+                        deck.remove(0);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * shuffles the deck
+     */
+    public void shuffle(){
+        ArrayList<Card> newDeck = new ArrayList<Card>(); //the new deck after shuffling
+        boolean[] cardUsed = new boolean[52]; //holds whether that card has been added
+        //to the new deck
+
+        //for each card
+        for(int i = 0; i < 52; i++){
+            //set each cardused to false
+            cardUsed[i] = false;
+        }
+
+        //for each card (in random order)
+        for(int i = 0; i < 52; i++){
+            Random random = new Random();//random
+            int cardPlace = 0;//the place of the card in the current deck that will be
+            //added to the new deck
+            do {
+                cardPlace = random.nextInt(52); //try a random card number
+            } while(cardUsed[cardPlace] == true); //while card has not already been placed
+            //in new deck
+
+            //set the card used to true
+            cardUsed[cardPlace] = true;
+            //add the card to the deck (in order)
+            newDeck.add(deck.get(cardPlace));
+        }
+        //set the deck to the new shuffled deck
+        deck = newDeck;
+    }
+
+    /**
+     * deals the cards to all players
+     */
+    public void dealCards() {
+        //for each card in a hand
+        for (int i = 0; i < 5; i++){
+            //for each player
+            for (int j = 1; j <= numPlayers; j++) {
+                if (i == 1) {
+                    //deal the top card of the deck to the player
+                    player1Hand[i] = deck.get(0);
+                    //remove the top card from the deck
+                    deck.remove(0);
+                }
+                else if (i == 2) {
+                    //deal a card to the player
+                    player2Hand[i] = deck.get(0);
+                    //remove the top card from the deck
+                    deck.remove(0);
+                }
+            }
+        }
+    }
+
+    /**
+     * converts a Card array to a Card ArrayList
+     *
+     * @param card
+     *      the array of Cards to be converted
+     * @return
+     *      the converted ArrayList
+     */
+    public ArrayList<Card> cardArrayToArrayList(Card[] card){
+        int i = 0;//iterator
+        ArrayList<Card> cardList = new ArrayList<Card>();//list to be returned
+
+        //for each card
+        for (Card c: card){
+            //add the next card to the list
+            cardList.add(card[i]);
+            //iterator
+            i++;
+        }
+
+        //return
+        return cardList;
     }
 
     public int getPlayer1Money() {
