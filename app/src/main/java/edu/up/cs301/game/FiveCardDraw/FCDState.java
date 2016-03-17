@@ -1,5 +1,8 @@
 package edu.up.cs301.game.FiveCardDraw;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import edu.up.cs301.card.Card;
 import edu.up.cs301.card.Rank;
 import edu.up.cs301.card.Suit;
@@ -13,7 +16,7 @@ public class FCDState extends GameState {
 
     private Card[] player1Hand = new Card[5];
     private Card[] player2Hand = new Card[5];
-    private Card[] deck = new Card[52];
+    private ArrayList<Card> deck = new ArrayList<Card>();
     private Card cardBack;
 
     private int player1Money;
@@ -44,13 +47,29 @@ public class FCDState extends GameState {
         int cardCount = 0;
         for(int i = 0; i < 4; i++){
             for(int j = 0; j < 13; j++){
-                deck[cardCount] =  new Card(cardVals[j], cardSuits[i]);
+                Card card = new Card(cardVals[j], cardSuits[i]);
+                deck.add(card);
                 cardCount++;
             }
         }
         gameStage = 0;
         pot = 0;
     }
+
+    /**
+     * Creates a gamestate with the given inputs
+     *
+     * @param activePlayer --> the player's number whose turn it is
+     * @param gameStage --> what point in the game the gamestate is at
+     * @param pot --> The total amount of money that is a sum of all the bets and ante's made by the
+     *            players
+     * @param player1Bet --> the amount that the first player bets to be added to the pot
+     * @param player2Bet --> the amount that the second player bets to be added to the pot
+     * @param player1Money --> the amount of money that the first player has available to place a bet.
+     * @param player2Money --> the amount of money that the second player has available to place a bet.
+     * @param player1Fold --> is true depending on if the first player is still playing or not
+     * @param player2Fold --> is true depending on if the second player is still playing or not
+     */
 
     public FCDState(int activePlayer, int gameStage, int pot, int player1Bet, int player2Bet, int player1Money,
                     int player2Money, boolean player1Fold, boolean player2Fold){
@@ -70,11 +89,261 @@ public class FCDState extends GameState {
         }
     }
 
-    public int handValue(Card[] playersHand){
 
+    /**
+     * This method takes in the input of the players hand and determines the numerical value of the
+     * hand.
+     *
+     * @param playersHand --> an array for cards that are currently in the player's hand
+     *
+     * @return --> returns the 0-9 integer value of the players hand based on the following hierarchy
+     * 0 --> High Card
+     * 1 --> Single Pair
+     * 2 --> Two Pair
+     * 3 --> Three of a kind
+     * 4 --> Straight
+     * 5 --> Flush
+     * 6 --> Full house
+     * 7 --> 4 of a kind
+     * 8 --> Straight Flush
+     * 9 --> Royal Flush
+     *
+     */
+    public int handValue(Card[] playersHand){
+        Rank[] cardVals = new Rank[5];
+        Suit[] cardSuit = new Suit[5];
+        int handVal = 0;
+        //separates the ranks and suits of the cards into separate arrays
+        for(int i = 0; i < 5; i++){
+            cardVals[i] = playersHand[i].getRank();
+            cardSuit[i] = playersHand[i].getSuit();
+        }
+        int matchCount = 0;
+        //counts the amount of pairs there are in the hand
+        for(int i = 1; i < 5; i++){
+            //the cards that match with the first card in the hand
+            if (cardVals[0].equals(cardVals[i])) {
+                matchCount++;
+            }
+            //the cards that match with the second card in the hand
+            if(i > 1){
+                if(cardVals[1].equals(cardVals[i])){
+                    matchCount++;
+                }
+            }
+            //the cards that match with the third card in the hand
+            if(i > 2){
+                if(cardVals[2].equals(cardVals[i])){
+                    matchCount++;
+                }
+            }
+            //the cards that match with the fourth card in the hand
+            if(i > 3){
+                if(cardVals[3].equals(cardVals[i])){
+                    matchCount++;
+                }
+            }
+        }
+        //determines which hand the player has and sets the value based on
+        //if they have a single pair
+        if (matchCount == 1){
+            handVal = 1;
+        //if they have two pair
+        }else if (matchCount == 2){
+            handVal = 2;
+        //if they have three of a kind
+        }else if (matchCount == 3){
+            handVal = 3;
+        //if they have a full house
+        }else if (matchCount == 4){
+            handVal = 6;
+        //if they have 4 of a kind
+        }else if (matchCount == 6){
+            handVal = 7;
+        }
+        //if they have a flush
+        if(allSameSuit(cardSuit)){
+            //if their flush is a royal flush
+            if(Royalty(cardVals)){
+                handVal = 9;
+            //if their hand is a straight flush
+            }else if(isStraight(cardVals)){
+                handVal = 8;
+            }
+            handVal = 5;
+        }
+        //if their hand is a straight
+        if(isStraight(cardVals)){
+            handVal = 4;
+        }
+        return handVal;
     }
 
+    /**
+     * This method is a helper method to the handValue method that return whether the hand is a
+     * royal flush or not
+     *
+     * @param ranks --> the Rank values of the cards in the players hand
+     *
+     * @return
+     * returns true when the player has the highest value straight
+     */
+    private boolean Royalty(Rank[] ranks){
+        int[] sorted = orderHand(ranks);
+        return isStraight(ranks) && sorted[0] == 10;
+    }
 
+    /**
+     * This method is a helper method to the handValue method that returns wherther the hand is a
+     * straight or not
+     *
+     * @param ranks --> the Rank values of the cards in the players hand
+     *
+     * @return
+     * returns true when the player has a straight
+     */
+
+    private boolean isStraight(Rank[] ranks){
+        int[] sorted = orderHand(ranks);
+        int count = 0;
+        for(int i = 1; i < 5; i++){
+            if(sorted[0] == sorted[i] - i){
+                count++;
+            }
+            if((sorted[0] == 10) && (i == 4) ){
+                if(sorted[i] == 1){
+                    count++;
+                }
+            }
+        }
+        return count == 4;
+    }
+
+    /**
+     * This method is a helper method to the isStraight method. It takes an array of ranks and then
+     * converts them to numerical values and return them in ascending order.
+     *
+     * @param ranks --> the Rank values of the cards in the players hand
+     *
+     * @return
+     * returns an array of integers in ascending order that represent the ranks in the player's hand
+     */
+
+    private int[] orderHand(Rank[] ranks){
+        int[] handVals = new int[5];
+        for(int i = 0; i < 5; i++){
+            handVals[i] = ranksToInts(ranks[i]);
+        }
+        Arrays.sort(handVals);
+        return handVals;
+    }
+
+    /**
+     * This method is a helper method that changed the ranks into numerical values
+     *
+     * @param rank --> the Rank values of the cards in the players hand
+     *
+     * @return
+     * returns the integer value for the corresponding rank
+     */
+
+    private int ranksToInts(Rank rank){
+        if(rank.equals(Rank.ACE)){
+            return 1;
+        }else if(rank.equals(Rank.TWO)){
+            return 2;
+        }else if(rank.equals(Rank.THREE)){
+            return 3;
+        }else if(rank.equals(Rank.FOUR)){
+            return 4;
+        }else if(rank.equals(Rank.FIVE)){
+            return 5;
+        }else if(rank.equals(Rank.SIX)){
+            return 6;
+        }else if(rank.equals(Rank.SEVEN)){
+            return 7;
+        }else if(rank.equals(Rank.EIGHT)){
+            return 8;
+        }else if(rank.equals(Rank.NINE)){
+            return 9;
+        }else if(rank.equals(Rank.TEN)){
+            return 10;
+        }else if(rank.equals(Rank.JACK)){
+            return 11;
+        }else if(rank.equals(Rank.QUEEN)){
+            return 12;
+        }else{
+            return 13;
+        }
+    }
+
+    /**
+     * This method is a helper method that checks if all the suits are the same
+     *
+     * @param suits --> the Suit values of the cards in the players hand
+     *
+     * @return
+     * returns true if the players hand consists of all the same suit
+     */
+    private boolean allSameSuit(Suit[] suits){
+        int sameSuitCount = 0;
+        for(int i = 1; i < 5; i++){
+            if(suits[0].equals(suits[i])){
+                sameSuitCount++;
+            }
+        }
+        if(sameSuitCount == 4){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public int subHandValue(Card[] cards){
+        int handVal = handValue(cards);
+        if(handVal == 0){
+            int highestCard = 0;
+            for(int i = 0; i < 5; i++){
+                if(highestCard < ranksToInts(cards[i].getRank())){
+                    highestCard = ranksToInts(cards[i].getRank());
+                }
+            }
+            return highestCard;
+        }else if(handVal == 1){
+
+        }else if(handVal == 2){
+
+        }else if(handVal == 3){
+
+        }else if(handVal == 4){
+            Rank[] ranks = new Rank[5];
+            for(int i = 0; i < 5; i++){
+                ranks[i] = cards[i].getRank();
+            }
+            int[] sorted = orderHand(ranks);
+            return sorted[0];
+        }else if(handVal == 5){
+            int highestCard = 0;
+            for(int i = 0; i < 5; i++){
+                if(highestCard < ranksToInts(cards[i].getRank())){
+                    highestCard = ranksToInts(cards[i].getRank());
+                }
+            }
+            return highestCard;
+        }else if(handVal == 6){
+
+        }else if(handVal == 7){
+
+        }else if(handVal == 8){
+            Rank[] ranks = new Rank[5];
+            for(int i = 0; i < 5; i++){
+                ranks[i] = cards[i].getRank();
+            }
+            int[] sorted = orderHand(ranks);
+            return sorted[0];
+        }
+        return 0;
+    }
 
     public int getPlayer1Money() {
         return player1Money;
@@ -88,9 +357,6 @@ public class FCDState extends GameState {
         return cardBack;
     }
 
-    public Card[] getDeck() {
-        return deck;
-    }
 
     public Card[] getPlayer1Hand() {
         return player1Hand;
@@ -154,10 +420,6 @@ public class FCDState extends GameState {
 
     public void setCardVals(Rank[] cardVals) {
         this.cardVals = cardVals;
-    }
-
-    public void setDeck(Card[] deck) {
-        this.deck = deck;
     }
 
     public void setGameStage(int gameStage) {
